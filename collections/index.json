@@ -1,5 +1,13 @@
 [
   {
+    "id": "ccfaa1f1_test_big",
+    "filename": "ccfaa1f1_test_big.db",
+    "displayName": "Test Big",
+    "description": "Email collection with 121 emails",
+    "emailCount": 121,
+    "created": "2025-11-23T04:35:56.030980Z"
+  },
+  {
     "id": "46770203_Most_Jeb",
     "filename": "46770203_Most_Jeb.db",
     "displayName": "Most Jeb",

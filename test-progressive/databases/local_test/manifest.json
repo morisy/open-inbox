@@ -11,7 +11,7 @@
       "start_email_id": 1,
       "end_email_id": 500,
       "storage": "repo",
-      "path": "content/local_test/chunk-0000.json.gz",
+      "path": "content/local_test/chunk-0000.json",
       "size_bytes": 36397
     },
     {
@@ -19,7 +19,7 @@
       "start_email_id": 501,
       "end_email_id": 1000,
       "storage": "repo",
-      "path": "content/local_test/chunk-0001.json.gz",
+      "path": "content/local_test/chunk-0001.json",
       "size_bytes": 34968
     },
     {
@@ -27,7 +27,7 @@
       "start_email_id": 1001,
       "end_email_id": 1500,
       "storage": "repo",
-      "path": "content/local_test/chunk-0002.json.gz",
+      "path": "content/local_test/chunk-0002.json",
       "size_bytes": 36023
     },
     {
@@ -35,7 +35,7 @@
       "start_email_id": 1501,
       "end_email_id": 2000,
       "storage": "repo",
-      "path": "content/local_test/chunk-0003.json.gz",
+      "path": "content/local_test/chunk-0003.json",
       "size_bytes": 36597
     }
   ]

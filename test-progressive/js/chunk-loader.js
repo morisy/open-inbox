@@ -44,24 +44,35 @@ class ChunkLoader {
     /**
      * Get email content by document ID
      */
-    async getEmailContent(documentId) {
+    async getEmailContent(documentId, chunkId = null) {
         // Check memory cache first
         if (this.memoryCache.has(documentId)) {
             console.log(`Email ${documentId} found in memory cache`);
             return this.memoryCache.get(documentId);
         }
         
-        // Find which chunk contains this email
-        const chunkId = await this.findChunkForEmail(documentId);
-        if (chunkId === null) {
+        // If chunk_id is provided, use it directly
+        if (chunkId !== null && chunkId !== undefined) {
+            console.log(`Loading email ${documentId} from chunk ${chunkId}`);
+            const chunk = await this.loadChunk(chunkId);
+            if (chunk && chunk[documentId]) {
+                return chunk[documentId];
+            } else {
+                console.warn(`Email ${documentId} not found in chunk ${chunkId}`);
+            }
+        }
+        
+        // Fallback: Find which chunk contains this email
+        const foundChunkId = await this.findChunkForEmail(documentId);
+        if (foundChunkId === null) {
             console.warn(`Email ${documentId} not found in any chunk`);
             return null;
         }
         
         // Load chunk
-        const chunk = await this.loadChunk(chunkId);
+        const chunk = await this.loadChunk(foundChunkId);
         if (!chunk || !chunk[documentId]) {
-            console.warn(`Email ${documentId} not found in chunk ${chunkId}`);
+            console.warn(`Email ${documentId} not found in chunk ${foundChunkId}`);
             return null;
         }
         

@@ -919,7 +919,7 @@
                 
                 try {
                     // Load content from chunk
-                    const content = await chunkLoader.getEmailContent(email.document_id);
+                    const content = await chunkLoader.getEmailContent(email.document_id, email.chunk_id);
                     
                     if (content) {
                         // Display full content - smooth transition

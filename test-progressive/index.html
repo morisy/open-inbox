@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open Inbox - Progressive Email Explorer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #f5f5f5;
+            color: #202124;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #app {
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            flex-shrink: 0;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 500;
+            color: #1a73e8;
+        }
+
+        .search-container {
+            flex: 1;
+            max-width: 600px;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 10px 16px;
+            border: 1px solid #dfe1e5;
+            border-radius: 24px;
+            font-size: 14px;
+            outline: none;
+            transition: box-shadow 0.2s;
+        }
+
+        .search-box:focus {
+            box-shadow: 0 1px 6px rgba(32,33,36,0.28);
+            border-color: transparent;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #5f6368;
+            font-size: 14px;
+        }
+
+        .header-actions button {
+            background: none;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+            color: #5f6368;
+            font-size: 14px;
+        }
+
+        .header-actions button:hover {
+            border-color: #1a73e8;
+            color: #1a73e8;
+        }
+
+        /* Main Layout */
+        .main-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            min-height: 0; /* Important for flex layouts */
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            padding: 20px;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .nav-item {
+            padding: 10px 16px;
+            border-radius: 0 16px 16px 0;
+            cursor: pointer;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #5f6368;
+            font-size: 14px;
+            transition: all 0.2s;
+            justify-content: space-between;
+        }
+
+        .nav-item:hover {
+            background: #f1f3f4;
+        }
+
+        .nav-item.active {
+            background: #e8f0fe;
+            color: #001d35;
+            font-weight: 500;
+        }
+
+        .count {
+            font-size: 12px;
+            color: #5f6368;
+            background: #f8f9fa;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        /* Email List */
+        .email-list-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            min-width: 0;
+        }
+
+        .email-list-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .email-list-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .email-list-header-left input[type="checkbox"] {
+            margin: 0;
+        }
+
+        #email-count {
+            font-size: 14px;
+            color: #5f6368;
+        }
+
+        #sort-by {
+            padding: 6px 12px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            font-size: 14px;
+            background: white;
+            color: #3c4043;
+        }
+
+        .email-list {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+        }
+
+        .email-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background 0.1s;
+            gap: 16px;
+        }
+
+        .email-item:hover {
+            background: #f8f9fa;
+            box-shadow: inset 1px 0 0 #dadce0, inset -1px 0 0 #dadce0;
+        }
+
+        .email-item.read {
+            background: #fafafa;
+            color: #3c4043;
+        }
+
+        .email-item.unread {
+            background: white;
+            font-weight: 500;
+        }
+
+        .email-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #dadce0;
+            border-radius: 3px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .email-sender {
+            min-width: 200px;
+            font-size: 14px;
+            color: #202124;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-shrink: 0;
+        }
+
+        .email-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .email-subject {
+            font-size: 14px;
+            color: #202124;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .email-preview {
+            font-size: 13px;
+            color: #5f6368;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .email-date {
+            font-size: 13px;
+            color: #5f6368;
+            white-space: nowrap;
+            min-width: 80px;
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        /* Email View */
+        .email-view {
+            flex: 2;
+            background: white;
+            display: none;
+            flex-direction: column;
+            border-left: 1px solid #e0e0e0;
+            min-width: 0;
+        }
+
+        .email-view.active {
+            display: flex;
+        }
+
+        .email-view-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            flex-shrink: 0;
+        }
+
+        .email-view-actions {
+            margin-bottom: 16px;
+        }
+
+        #back-btn {
+            background: none;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            padding: 8px 16px;
+            cursor: pointer;
+            color: #5f6368;
+            font-size: 14px;
+        }
+
+        #back-btn:hover {
+            border-color: #1a73e8;
+            color: #1a73e8;
+        }
+
+        .email-view-subject {
+            font-size: 22px;
+            margin-bottom: 16px;
+            color: #202124;
+            line-height: 1.3;
+        }
+
+        .email-view-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 14px;
+            color: #5f6368;
+        }
+
+        .email-view-meta strong {
+            color: #202124;
+        }
+
+        .email-view-body {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .email-body-content {
+            max-width: 720px;
+        }
+
+        /* Loading States */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: #5f6368;
+        }
+
+        .loading-spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #1a73e8;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 12px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 4px;
+            height: 16px;
+            margin-bottom: 8px;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .email-loading-content {
+            margin-top: 20px;
+        }
+
+        /* Virtual Scroll Container */
+        .virtual-scroll-container {
+            position: relative;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .virtual-scroll-content {
+            position: relative;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+            
+            .email-view {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                z-index: 100;
+            }
+            
+            .email-list-container {
+                max-width: 100%;
+            }
+
+            .email-sender {
+                min-width: 120px;
+            }
+        }
+
+        /* Search Results */
+        .search-results-header {
+            padding: 12px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 13px;
+            color: #5f6368;
+        }
+
+        .no-results {
+            padding: 40px 20px;
+            text-align: center;
+            color: #5f6368;
+            font-size: 16px;
+        }
+
+        .error-message {
+            padding: 20px;
+            background: #fef7f0;
+            border: 1px solid #fdd;
+            border-radius: 4px;
+            color: #d93025;
+            margin: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: white; z-index: 1000;">
+        <div class="loading-spinner"></div>
+        <span>Loading Open Inbox...</span>
+    </div>
+
+    <!-- Main App -->
+    <div id="app" style="display: none;">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">📧 Open Inbox</div>
+            <div class="search-container">
+                <input type="text" class="search-box" id="search-box" placeholder="Search emails...">
+            </div>
+            <div class="header-actions">
+                <span id="collection-name">Loading...</span>
+                <button id="refresh-btn">↻</button>
+            </div>
+        </div>
+
+        <!-- Main Container -->
+        <div class="main-container">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="nav-item active" data-folder="inbox">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span>📥</span>
+                        <span>Inbox</span>
+                    </div>
+                    <span class="count" id="inbox-count">0</span>
+                </div>
+                <div class="nav-item" data-folder="all">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span>📁</span>
+                        <span>All Mail</span>
+                    </div>
+                </div>
+                
+                <hr style="margin: 20px 0; border: none; border-top: 1px solid #e0e0e0;">
+                
+                <div class="contacts-section">
+                    <h4 style="font-size: 12px; color: #5f6368; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.8px;">Top Contacts</h4>
+                    <div id="contacts-list">
+                        <div style="padding: 8px 0; font-size: 13px; color: #5f6368;">Loading contacts...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Email List -->
+            <div class="email-list-container">
+                <div class="email-list-header">
+                    <div class="email-list-header-left">
+                        <input type="checkbox" id="select-all">
+                        <span id="email-count">Loading emails...</span>
+                    </div>
+                    <div>
+                        <select id="sort-by">
+                            <option value="date_desc">Newest First</option>
+                            <option value="date_asc">Oldest First</option>
+                            <option value="sender">By Sender</option>
+                            <option value="subject">By Subject</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="search-results-header" class="search-results-header" style="display: none;"></div>
+                
+                <div class="email-list" id="email-list">
+                    <div id="email-list-content"></div>
+                </div>
+            </div>
+
+            <!-- Email View -->
+            <div class="email-view" id="email-view">
+                <div class="email-view-header">
+                    <div class="email-view-actions">
+                        <button id="back-btn">← Back to List</button>
+                    </div>
+                    <h2 class="email-view-subject" id="email-subject">Loading...</h2>
+                    <div class="email-view-meta">
+                        <div>From: <strong id="email-from">Loading...</strong></div>
+                        <div>To: <strong id="email-to">Loading...</strong></div>
+                        <div>Date: <strong id="email-date">Loading...</strong></div>
+                    </div>
+                </div>
+                <div class="email-view-body">
+                    <div class="email-body-content">
+                        <!-- Preview shown immediately -->
+                        <div id="email-preview-content" style="color: #5f6368; font-style: italic; padding: 16px; background: #f8f9fa; border-left: 3px solid #dadce0; border-radius: 4px;">
+                            Loading preview...
+                        </div>
+                        
+                        <!-- Loading skeleton for full content -->
+                        <div id="email-loading" class="email-loading-content" style="display: none;">
+                            <div class="skeleton" style="width: 100%; height: 20px;"></div>
+                            <div class="skeleton" style="width: 90%; height: 20px;"></div>
+                            <div class="skeleton" style="width: 95%; height: 20px;"></div>
+                            <div class="skeleton" style="width: 85%; height: 20px;"></div>
+                        </div>
+                        
+                        <!-- Full content -->
+                        <div id="email-full-content" style="display: none;"></div>
+                    </div>
+                    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+                        <a id="document-link" href="#" target="_blank" style="color: #1a73e8; text-decoration: none; font-size: 14px;">View original document in DocumentCloud →</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+    <script src="js/chunk-loader.js"></script>
+    <script>
+        // Global state
+        let SQL = null;
+        let db = null;
+        let chunkLoader = null;
+        let emails = [];
+        let currentEmail = null;
+        let searchQuery = '';
+        let sortBy = 'date_desc';
+        let isChunkedMode = false;
+
+        // Initialize application
+        async function initApp() {
+            try {
+                console.log('Initializing Open Inbox...');
+                
+                // Get collection from URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const collectionParam = urlParams.get('collection') || urlParams.get('emails');
+                
+                if (!collectionParam) {
+                    throw new Error('No collection specified in URL. Add ?collection=local_test');
+                }
+                
+                console.log('Collection parameter:', collectionParam);
+                
+                // Detect if this is chunked mode or legacy mode
+                const manifestUrl = `databases/${collectionParam}/manifest.json`;
+                
+                try {
+                    // Try to load manifest (chunked mode)
+                    const response = await fetch(manifestUrl);
+                    if (response.ok) {
+                        console.log('Chunked mode detected');
+                        isChunkedMode = true;
+                        await initChunkedMode(collectionParam);
+                    } else {
+                        // Fall back to legacy mode
+                        console.log('Legacy mode detected');
+                        await initLegacyMode(collectionParam);
+                    }
+                } catch (error) {
+                    // Fall back to legacy mode
+                    console.log('Falling back to legacy mode');
+                    await initLegacyMode(collectionParam);
+                }
+                
+                // Initialize UI
+                initializeUI();
+                
+                // Load email list
+                await loadEmailList();
+                
+                // Load top contacts
+                await loadTopContacts();
+                
+                // Hide loading screen
+                document.getElementById('loading-screen').style.display = 'none';
+                document.getElementById('app').style.display = 'flex';
+                
+                console.log('App initialization complete');
+                
+            } catch (error) {
+                console.error('Failed to initialize app:', error);
+                showError('Failed to load email collection: ' + error.message);
+            }
+        }
+
+        // Initialize chunked mode
+        async function initChunkedMode(collectionId) {
+            console.log('Initializing chunked mode for collection:', collectionId);
+            
+            // Initialize SQL.js for metadata
+            SQL = await initSqlJs({
+                locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+            });
+            
+            // Load metadata database
+            const metadataUrl = `databases/${collectionId}/metadata.db`;
+            const response = await fetch(metadataUrl);
+            if (!response.ok) {
+                throw new Error(`Failed to load metadata database: ${response.status} ${response.statusText}`);
+            }
+            
+            const buffer = await response.arrayBuffer();
+            const data = new Uint8Array(buffer);
+            db = new SQL.Database(data);
+            
+            console.log('Metadata database loaded');
+            
+            // Initialize chunk loader
+            const manifestUrl = `databases/${collectionId}/manifest.json`;
+            chunkLoader = new window.EnhancedChunkLoader(collectionId, manifestUrl);
+            await chunkLoader.initialize();
+            
+            console.log('Chunk loader initialized');
+            
+            // Update collection name
+            const collectionInfo = db.exec('SELECT display_name FROM collection_info LIMIT 1');
+            if (collectionInfo.length > 0) {
+                document.getElementById('collection-name').textContent = collectionInfo[0].values[0][0];
+            }
+        }
+
+        // Initialize legacy mode (backward compatibility)
+        async function initLegacyMode(collectionId) {
+            console.log('Initializing legacy mode for collection:', collectionId);
+            
+            // Initialize SQL.js
+            SQL = await initSqlJs({
+                locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+            });
+            
+            // Load full database
+            const dbUrl = `collections/${collectionId}.db`;
+            const response = await fetch(dbUrl);
+            if (!response.ok) {
+                throw new Error(`Failed to load database: ${response.status} ${response.statusText}`);
+            }
+            
+            const buffer = await response.arrayBuffer();
+            const data = new Uint8Array(buffer);
+            db = new SQL.Database(data);
+            
+            console.log('Legacy database loaded');
+            
+            // Update collection name
+            const collectionInfo = db.exec('SELECT display_name FROM collection_info LIMIT 1');
+            if (collectionInfo.length > 0) {
+                document.getElementById('collection-name').textContent = collectionInfo[0].values[0][0];
+            }
+        }
+
+        // Load email list
+        async function loadEmailList() {
+            try {
+                console.log('Loading email list...');
+                console.log('Current search query:', searchQuery);
+                console.log('Is chunked mode:', isChunkedMode);
+                let query = 'SELECT ';
+                
+                if (isChunkedMode) {
+                    // Chunked mode - select from metadata
+                    query += 'email_id, document_id, sender_email, sender_name, recipient_email, recipient_name, subject, preview, date_sent, chunk_id';
+                } else {
+                    // Legacy mode - select everything
+                    query += 'document_id, sender_email, sender_name, recipient_email, recipient_name, subject, preview, date_sent, body, metadata';
+                }
+                
+                query += ' FROM emails';
+                
+                // Add search filter
+                if (searchQuery) {
+                    // Use LIKE search for now (FTS5 not available in SQL.js)
+                    query += ` WHERE subject LIKE '%${searchQuery}%' OR sender_name LIKE '%${searchQuery}%' OR sender_email LIKE '%${searchQuery}%' OR preview LIKE '%${searchQuery}%'`;
+                }
+                
+                // Add sorting
+                switch (sortBy) {
+                    case 'date_asc':
+                        query += ' ORDER BY date_sent ASC';
+                        break;
+                    case 'sender':
+                        query += ' ORDER BY sender_name ASC';
+                        break;
+                    case 'subject':
+                        query += ' ORDER BY subject ASC';
+                        break;
+                    default:
+                        query += ' ORDER BY date_sent DESC';
+                }
+                
+                console.log('Executing query:', query);
+                console.log('Search query:', searchQuery);
+                
+                // Execute query (LIKE search has searchQuery embedded in string)
+                let result;
+                try {
+                    result = db.exec(query);
+                    console.log('Query executed successfully, result length:', result.length);
+                } catch (queryError) {
+                    console.error('Query execution failed:', queryError);
+                    console.error('Failed query:', query);
+                    throw queryError;
+                }
+                
+                if (result.length > 0) {
+                    emails = result[0].values.map(row => {
+                        const email = {};
+                        result[0].columns.forEach((col, idx) => {
+                            email[col] = row[idx];
+                        });
+                        return email;
+                    });
+                } else {
+                    emails = [];
+                }
+                
+                console.log(`Loaded ${emails.length} emails`);
+                
+                // Update UI
+                updateEmailCount();
+                updateSearchResultsHeader();
+                
+                // Render email list
+                renderEmailList();
+                
+            } catch (error) {
+                console.error('Failed to load emails:', error);
+                showError('Failed to load emails: ' + error.message);
+            }
+        }
+
+        function updateEmailCount() {
+            const count = emails.length;
+            const countText = searchQuery ? 
+                `${count} results${searchQuery ? ` for "${searchQuery}"` : ''}` : 
+                `${count} emails`;
+            
+            document.getElementById('email-count').textContent = countText;
+            document.getElementById('inbox-count').textContent = count.toString();
+        }
+
+        function updateSearchResultsHeader() {
+            const header = document.getElementById('search-results-header');
+            if (searchQuery) {
+                header.style.display = 'block';
+                header.textContent = `Search results for "${searchQuery}" (${emails.length} found)`;
+            } else {
+                header.style.display = 'none';
+            }
+        }
+
+        // Render email list
+        function renderEmailList() {
+            const container = document.getElementById('email-list-content');
+            container.innerHTML = '';
+            
+            if (emails.length === 0) {
+                container.innerHTML = '<div class="no-results">No emails found</div>';
+                return;
+            }
+            
+            // For performance, render all emails (virtual scrolling can be added later for very large lists)
+            emails.forEach((email, index) => {
+                const item = createEmailListItem(email, index);
+                container.appendChild(item);
+            });
+        }
+
+        // Create email list item
+        function createEmailListItem(email, index) {
+            const div = document.createElement('div');
+            div.className = 'email-item unread'; // Make all emails appear unread for demo
+            div.dataset.index = index;
+            div.dataset.documentId = email.document_id;
+            
+            // Format date
+            const date = email.date_sent ? new Date(email.date_sent) : null;
+            const dateStr = date ? formatDate(date) : '';
+            
+            // Get sender display name
+            const senderDisplay = email.sender_name || email.sender_email || 'Unknown';
+            
+            div.innerHTML = `
+                <div class="email-checkbox"></div>
+                <div class="email-sender">${escapeHtml(senderDisplay)}</div>
+                <div class="email-content">
+                    <div class="email-subject">${escapeHtml(email.subject || 'No Subject')}</div>
+                    <div class="email-preview">${escapeHtml(email.preview || '')}</div>
+                </div>
+                <div class="email-date">${dateStr}</div>
+            `;
+            
+            div.addEventListener('click', () => viewEmail(email));
+            
+            return div;
+        }
+
+        // Load top contacts
+        async function loadTopContacts() {
+            try {
+                // Get top senders by email count
+                let query;
+                if (isChunkedMode) {
+                    query = `
+                        SELECT sender_name, sender_email, COUNT(*) as count
+                        FROM emails 
+                        WHERE sender_name IS NOT NULL 
+                        GROUP BY sender_email 
+                        ORDER BY count DESC 
+                        LIMIT 8
+                    `;
+                } else {
+                    query = `
+                        SELECT sender_name, sender_email, COUNT(*) as count
+                        FROM emails 
+                        WHERE sender_name IS NOT NULL 
+                        GROUP BY sender_email 
+                        ORDER BY count DESC 
+                        LIMIT 8
+                    `;
+                }
+                
+                const result = db.exec(query);
+                const contactsContainer = document.getElementById('contacts-list');
+                
+                if (result.length > 0 && result[0].values.length > 0) {
+                    contactsContainer.innerHTML = result[0].values.map(row => {
+                        const name = row[0] || row[1];
+                        const count = row[2];
+                        return `
+                            <div style="padding: 4px 0; font-size: 13px; color: #5f6368; cursor: pointer; display: flex; justify-content: space-between; align-items: center;" 
+                                 onclick="filterBySender('${escapeHtml(row[1])}')">
+                                <span style="overflow: hidden; text-overflow: ellipsis;">${escapeHtml(name)}</span>
+                                <span style="font-size: 11px; background: #f1f3f4; padding: 1px 6px; border-radius: 8px;">${count}</span>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    contactsContainer.innerHTML = '<div style="padding: 8px 0; font-size: 13px; color: #5f6368;">No contacts found</div>';
+                }
+            } catch (error) {
+                console.error('Failed to load contacts:', error);
+            }
+        }
+
+        function filterBySender(senderEmail) {
+            document.getElementById('search-box').value = senderEmail;
+            searchQuery = senderEmail;
+            loadEmailList();
+        }
+
+        // View email with progressive loading
+        async function viewEmail(email) {
+            console.log('Viewing email:', email.document_id);
+            currentEmail = email;
+            
+            // Show email view
+            document.querySelector('.email-list-container').style.display = 'none';
+            document.getElementById('email-view').classList.add('active');
+            
+            // Display metadata immediately
+            document.getElementById('email-subject').textContent = email.subject || 'No Subject';
+            document.getElementById('email-from').textContent = `${email.sender_name || email.sender_email || 'Unknown'}`;
+            document.getElementById('email-to').textContent = `${email.recipient_name || email.recipient_email || 'Unknown'}`;
+            
+            const date = email.date_sent ? new Date(email.date_sent) : null;
+            document.getElementById('email-date').textContent = date ? date.toLocaleString() : '';
+            
+            // Show preview immediately
+            document.getElementById('email-preview-content').textContent = email.preview || 'Loading email content...';
+            document.getElementById('email-preview-content').style.display = 'block';
+            document.getElementById('email-loading').style.display = 'none';
+            document.getElementById('email-full-content').style.display = 'none';
+            
+            // Load full content
+            if (isChunkedMode) {
+                // Show loading skeleton immediately if we have a meaningful preview
+                if (email.preview && email.preview.length > 50) {
+                    // Keep preview visible, no skeleton flash
+                } else {
+                    // Only show skeleton if preview is short/empty
+                    setTimeout(() => {
+                        document.getElementById('email-preview-content').style.display = 'none';
+                        document.getElementById('email-loading').style.display = 'block';
+                    }, 100);
+                }
+                
+                try {
+                    // Load content from chunk
+                    const content = await chunkLoader.getEmailContent(email.document_id);
+                    
+                    if (content) {
+                        // Display full content - smooth transition
+                        document.getElementById('email-loading').style.display = 'none';
+                        document.getElementById('email-preview-content').style.display = 'none';
+                        document.getElementById('email-full-content').innerHTML = formatEmailBody(content.body);
+                        document.getElementById('email-full-content').style.display = 'block';
+                        
+                        // Update document link
+                        document.getElementById('document-link').href = content.document_url;
+                        
+                        // Prefetch adjacent chunks
+                        if (email.chunk_id !== undefined) {
+                            chunkLoader.prefetchAdjacentChunks(email.chunk_id);
+                        }
+                    } else {
+                        throw new Error('Email content not found');
+                    }
+                    
+                } catch (error) {
+                    console.error('Failed to load email content:', error);
+                    document.getElementById('email-loading').style.display = 'none';
+                    document.getElementById('email-preview-content').style.display = 'block';
+                    document.getElementById('email-preview-content').innerHTML = 
+                        '<div class="error-message">Failed to load full email content. Please try again.</div>' +
+                        '<div style="margin-top: 16px; color: #5f6368; font-style: italic;">' + escapeHtml(email.preview || 'No preview available') + '</div>';
+                }
+                
+            } else {
+                // Legacy mode - content is already in database
+                document.getElementById('email-preview-content').style.display = 'none';
+                document.getElementById('email-full-content').innerHTML = formatEmailBody(email.body);
+                document.getElementById('email-full-content').style.display = 'block';
+                
+                // Update document link
+                if (email.metadata) {
+                    try {
+                        const metadata = JSON.parse(email.metadata);
+                        document.getElementById('document-link').href = metadata.document_url;
+                    } catch (e) {
+                        console.warn('Failed to parse metadata:', e);
+                    }
+                }
+            }
+        }
+
+        // Initialize UI event handlers
+        function initializeUI() {
+            // Search
+            document.getElementById('search-box').addEventListener('input', (e) => {
+                searchQuery = e.target.value;
+                debounce(loadEmailList, 300)();
+            });
+            
+            // Sort
+            document.getElementById('sort-by').addEventListener('change', (e) => {
+                sortBy = e.target.value;
+                loadEmailList();
+            });
+            
+            // Back button
+            document.getElementById('back-btn').addEventListener('click', () => {
+                document.getElementById('email-view').classList.remove('active');
+                document.querySelector('.email-list-container').style.display = 'flex';
+            });
+            
+            // Refresh button
+            document.getElementById('refresh-btn').addEventListener('click', () => {
+                if (chunkLoader) {
+                    chunkLoader.clearMemoryCache();
+                }
+                loadEmailList();
+                loadTopContacts();
+            });
+            
+            // Sidebar navigation
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    // Update active state
+                    document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                    item.classList.add('active');
+                    
+                    // For now, all folders show the same content
+                    // In future, could filter by folder
+                });
+            });
+        }
+
+        // Utility functions
+        function formatDate(date) {
+            const now = new Date();
+            const diff = now - date;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            
+            if (days === 0) {
+                return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            } else if (days < 7) {
+                return date.toLocaleDateString([], { weekday: 'short' });
+            } else if (days < 365) {
+                return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+            } else {
+                return date.toLocaleDateString([], { year: 'numeric', month: 'short' });
+            }
+        }
+
+        function formatEmailBody(text) {
+            if (!text) return '';
+            
+            // Convert plain text to HTML
+            let html = escapeHtml(text);
+            
+            // Convert URLs to links
+            html = html.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" style="color: #1a73e8;">$1</a>');
+            
+            // Convert email addresses to links
+            html = html.replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, 
+                '<a href="mailto:$1" style="color: #1a73e8;">$1</a>');
+            
+            // Convert line breaks
+            html = html.replace(/\n/g, '<br>');
+            
+            return html;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        function showError(message) {
+            const loadingScreen = document.getElementById('loading-screen');
+            loadingScreen.innerHTML = `
+                <div style="text-align: center; max-width: 400px;">
+                    <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
+                    <div style="font-size: 18px; margin-bottom: 10px; color: #d93025;">Error</div>
+                    <div style="color: #5f6368; line-height: 1.5;">${escapeHtml(message)}</div>
+                    <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #1a73e8; color: white; border: none; border-radius: 4px; cursor: pointer;">Retry</button>
+                </div>
+            `;
+        }
+
+        // Start the application
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
